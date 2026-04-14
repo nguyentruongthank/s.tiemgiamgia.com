@@ -8,9 +8,17 @@ export async function onRequest(context) {
   // ===== LOGIN =====
   if (path === "/login") {
     return html(`
-    <h2>🔐 Login</h2>
-    <input id="pass" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:40px}
+.box{background:white;padding:20px;border-radius:8px;max-width:300px;margin:auto}
+input,button{width:100%;padding:10px;margin-top:10px}
+</style>
+
+<div class="box">
+<h2>🔐 Login</h2>
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>
 
 <script>
 async function login(){
@@ -21,7 +29,7 @@ async function login(){
   else alert("Sai mật khẩu");
 }
 </script>
-    `);
+`);
   }
 
   if (path === "/api/login") {
@@ -40,24 +48,31 @@ async function login(){
 
     return html(`
 <style>
-body { font-family: Arial; padding:20px; background:#f5f5f5 }
-input { padding:8px; margin:5px }
-button { padding:8px 12px; cursor:pointer }
-table { width:100%; margin-top:20px; background:white; border-collapse: collapse }
-td,th { padding:10px; border:1px solid #ddd }
+body{font-family:sans-serif;background:#f5f5f5;padding:20px}
+.card{background:white;padding:15px;border-radius:8px;margin-bottom:15px}
+input{padding:8px;margin:5px}
+button{padding:8px 12px;cursor:pointer}
+table{width:100%;background:white;border-collapse:collapse}
+td,th{padding:10px;border:1px solid #ddd}
+.top{display:flex;gap:10px;flex-wrap:wrap}
 </style>
 
 <h2>📊 Link Manager PRO</h2>
 
+<div class="card top">
 <input id="key" placeholder="key">
 <input id="url" placeholder="url">
 <button onclick="add()">➕ Add</button>
 <button onclick="exportCSV()">📥 Export CSV</button>
+<button onclick="logout()">🚪 Logout</button>
+</div>
 
-
+<div class="card">
+<b>Tổng link:</b> <span id="total">0</span> |
+<b>Tổng click:</b> <span id="clicks">0</span>
+</div>
 
 <table id="table"></table>
-
 
 <script>
 async function add(){
@@ -74,8 +89,7 @@ async function load(){
 
   let html = "<tr><th>Link</th><th>Clicks</th></tr>";
 
-  let labels = [];
-  let clicks = [];
+  let total = 0;
 
   data.forEach(d=>{
     html+=\`<tr>
@@ -83,26 +97,12 @@ async function load(){
       <td>\${d.clicks}</td>
     </tr>\`;
 
-    labels.push(d.key);
-    clicks.push(d.clicks);
+    total += d.clicks;
   });
 
   table.innerHTML = html;
-
-  renderChart(labels, clicks);
-}
-
-function renderChart(labels, data){
-  new Chart(document.getElementById("chart"), {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Clicks',
-        data: data
-      }]
-    }
-  });
+  document.getElementById("total").innerText = data.length;
+  document.getElementById("clicks").innerText = total;
 }
 
 function exportCSV(){
@@ -120,9 +120,14 @@ function exportCSV(){
   });
 }
 
+function logout(){
+  document.cookie = "auth=; Max-Age=0; path=/";
+  location.href="/login";
+}
+
 load();
 </script>
-    `);
+`);
   }
 
   // ===== API =====
