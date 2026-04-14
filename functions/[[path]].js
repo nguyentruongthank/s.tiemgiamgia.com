@@ -3,21 +3,24 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   let path = url.pathname.replace(/\/+$/, "");
 
+  const isAdmin = request.headers.get("cookie")?.includes("auth=ok");
+
   // ===== LOGIN =====
   if (path === "/login") {
     return html(`
-      <h2>Login</h2>
-      <input id="pass" type="password">
-      <button onclick="login()">Login</button>
-      <script>
-      async function login(){
-        const pass = document.getElementById("pass").value;
-        const res = await fetch("/api/login",{method:"POST",body:JSON.stringify({password:pass})});
-        const data = await res.json();
-        if(data.success) location.href="/admin";
-        else alert("Sai mật khẩu");
-      }
-      </script>
+    <h2>🔐 Login</h2>
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+
+<script>
+async function login(){
+  const pass = document.getElementById("pass").value;
+  const res = await fetch("/api/login",{method:"POST",body:JSON.stringify({password:pass})});
+  const data = await res.json();
+  if(data.success) location.href="/admin";
+  else alert("Sai mật khẩu");
+}
+</script>
     `);
   }
 
@@ -31,18 +34,31 @@ export async function onRequest(context) {
     return json({ success: false });
   }
 
-  const isAdmin = request.headers.get("cookie")?.includes("auth=ok");
-
   // ===== ADMIN =====
   if (path === "/admin") {
     if (!isAdmin) return Response.redirect("/login", 302);
 
     return html(`
-      <h2>Link Manager</h2>
-      <input id="key" placeholder="key">
-      <input id="url" placeholder="url">
-      <button onclick="add()">Add</button>
-      <table id="table"></table>
+<style>
+body { font-family: Arial; padding:20px; background:#f5f5f5 }
+input { padding:8px; margin:5px }
+button { padding:8px 12px; cursor:pointer }
+table { width:100%; margin-top:20px; background:white; border-collapse: collapse }
+td,th { padding:10px; border:1px solid #ddd }
+</style>
+
+<h2>📊 Link Manager PRO</h2>
+
+<input id="key" placeholder="key">
+<input id="url" placeholder="url">
+<button onclick="add()">➕ Add</button>
+<button onclick="exportCSV()">📥 Export CSV</button>
+
+<canvas id="chart" height="100"></canvas>
+
+<table id="table"></table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 async function add(){
@@ -59,14 +75,50 @@ async function load(){
 
   let html = "<tr><th>Link</th><th>Clicks</th></tr>";
 
+  let labels = [];
+  let clicks = [];
+
   data.forEach(d=>{
     html+=\`<tr>
-    <td>\${location.origin+d.key}</td>
-    <td>\${d.clicks}</td>
-    </tr>\`
+      <td>\${location.origin+d.key}</td>
+      <td>\${d.clicks}</td>
+    </tr>\`;
+
+    labels.push(d.key);
+    clicks.push(d.clicks);
   });
 
   table.innerHTML = html;
+
+  renderChart(labels, clicks);
+}
+
+function renderChart(labels, data){
+  new Chart(document.getElementById("chart"), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Clicks',
+        data: data
+      }]
+    }
+  });
+}
+
+function exportCSV(){
+  fetch("/api/list").then(r=>r.json()).then(data=>{
+    let csv = "link,clicks\\n";
+    data.forEach(d=>{
+      csv += d.key + "," + d.clicks + "\\n";
+    });
+
+    const blob = new Blob([csv]);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "data.csv";
+    a.click();
+  });
 }
 
 load();
@@ -100,6 +152,19 @@ load();
     }
 
     return json(result);
+  }
+
+  // ===== RANDOM DEAL =====
+  if (path === "/deal") {
+    const list = await env.LINKS.list();
+    if (list.keys.length === 0) {
+      return new Response("No link");
+    }
+
+    const random = list.keys[Math.floor(Math.random()*list.keys.length)];
+    const data = JSON.parse(await env.LINKS.get(random.name));
+
+    return Response.redirect(data.url, 302);
   }
 
   // ===== REDIRECT =====
