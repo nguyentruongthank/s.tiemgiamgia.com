@@ -54,11 +54,10 @@ td,th { padding:10px; border:1px solid #ddd }
 <button onclick="add()">➕ Add</button>
 <button onclick="exportCSV()">📥 Export CSV</button>
 
-<canvas id="chart" height="100"></canvas>
+
 
 <table id="table"></table>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 async function add(){
