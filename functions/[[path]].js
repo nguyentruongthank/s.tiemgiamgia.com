@@ -2,23 +2,54 @@ export async function onRequest(context) {
   const { request } = context;
 
   const url = new URL(request.url);
-  let path = url.pathname.replace(/^\/|\/$/g, ""); 
-  // => "evo"
+  let path = url.pathname.replace(/^\/|\/$/g, "");
 
-  const GITHUB_RAW = "https://raw.githubusercontent.com/nguyentruongthanh/s.tiemgiamgia.com/main/links.txt";
+  // 👉 trang root
+  if (!path) {
+    return new Response("🚀 Link system running", {
+      headers: { "content-type": "text/plain;charset=UTF-8" }
+    });
+  }
 
-  const res = await fetch(GITHUB_RAW);
-  const text = await res.text();
+  // 🔥 CACHE
+  const cache = caches.default;
+  const cacheKey = new Request("https://cache/links");
 
+  let response = await cache.match(cacheKey);
+
+  let text;
+
+  if (!response) {
+    // 👉 fetch file local
+    const res = await fetch(new URL("/links.txt", request.url));
+
+    text = await res.text();
+
+    // 👉 lưu vào cache
+    response = new Response(text, {
+      headers: {
+        "Cache-Control": "public, max-age=300"
+      }
+    });
+
+    context.waitUntil(cache.put(cacheKey, response.clone()));
+
+  } else {
+    // 👉 lấy từ cache
+    text = await response.text();
+  }
+
+  // 🔍 parse
   const lines = text.split("\n");
 
   for (let line of lines) {
     line = line.trim();
     if (!line) continue;
 
-    let [key, target] = line.split(/\s+/);
+    let [key, ...rest] = line.split(/\s+/);
+    let target = rest.join(" ");
 
-    // 🔥 xử lý bỏ dấu /
+    // bỏ dấu /
     key = key.replace(/^\/|\/$/g, "");
 
     if (key === path) {
@@ -26,18 +57,8 @@ export async function onRequest(context) {
     }
   }
 
-  return new Response("❌ Link không tồn tại", { status: 404 });
-}
-
-  const cache = caches.default;
-  let response = await cache.match(GITHUB_RAW);
-  
-  if (!response) {
-    response = await fetch(GITHUB_RAW);
-    response = new Response(response.body, response);
-    response.headers.append("Cache-Control", "s-maxage=60");
-    context.waitUntil(cache.put(GITHUB_RAW, response.clone()));
-  }
-
-const text = await response.text();
+  return new Response("❌ Link không tồn tại", {
+    status: 404,
+    headers: { "content-type": "text/plain;charset=UTF-8" }
+  });
 }
