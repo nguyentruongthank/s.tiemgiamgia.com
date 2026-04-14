@@ -62,7 +62,9 @@ td,th{padding:10px;border:1px solid #ddd}
 <div class="card top">
 <input id="key" placeholder="key">
 <input id="url" placeholder="url">
+<input type="file" id="file">
 <button onclick="add()">➕ Add</button>
+<button onclick="importCSV()">📥 Import CSV</button>
 <button onclick="exportCSV()">📥 Export CSV</button>
 <button onclick="logout()">🚪 Logout</button>
 </div>
@@ -104,7 +106,33 @@ async function load(){
   document.getElementById("total").innerText = data.length;
   document.getElementById("clicks").innerText = total;
 }
+async function importCSV(){
+  const file = document.getElementById("file").files[0];
+  if(!file) return alert("Chọn file CSV");
 
+  const text = await file.text();
+  const lines = text.split("\n");
+
+  for(let i=1;i<lines.length;i++){
+    const line = lines[i].trim();
+    if(!line) continue;
+
+    const [key, url] = line.split(",");
+
+    await fetch("/api/add", {
+      method:"POST",
+      body: JSON.stringify({
+        key,
+        target: url
+      })
+    });
+
+    console.log("✔", key);
+  }
+
+  alert("Import xong 🚀");
+  load();
+}
 function exportCSV(){
   fetch("/api/list").then(r=>r.json()).then(data=>{
     let csv = "link,clicks\\n";
