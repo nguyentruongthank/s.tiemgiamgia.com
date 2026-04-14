@@ -29,4 +29,16 @@ export async function onRequest(context) {
   }
 
   return new Response("❌ Link không tồn tại", { status: 404 });
+
+  const cache = caches.default;
+  let response = await cache.match(GITHUB_RAW);
+  
+  if (!response) {
+    response = await fetch(GITHUB_RAW);
+    response = new Response(response.body, response);
+    response.headers.append("Cache-Control", "s-maxage=60");
+    context.waitUntil(cache.put(GITHUB_RAW, response.clone()));
+  }
+
+const text = await response.text();
 }
