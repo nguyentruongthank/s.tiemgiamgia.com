@@ -2,16 +2,11 @@ export async function onRequest(context) {
   const { request } = context;
 
   const url = new URL(request.url);
-  let path = url.pathname.replace(/^\/|\/$/g, "");
+  let path = url.pathname.replace(/^\/|\/$/g, ""); 
+  // => "evo"
 
-  if (!path) {
-    return new Response("Trang link hoạt động 🚀");
-  }
-
-  // 🔥 link raw GitHub của bạn
   const GITHUB_RAW = "https://raw.githubusercontent.com/nguyentruongthanh/s.tiemgiamgia.com/main/links.txt";
 
-  // fetch file
   const res = await fetch(GITHUB_RAW);
   const text = await res.text();
 
@@ -21,7 +16,10 @@ export async function onRequest(context) {
     line = line.trim();
     if (!line) continue;
 
-    const [key, target] = line.split(/\s+/);
+    let [key, target] = line.split(/\s+/);
+
+    // 🔥 xử lý bỏ dấu /
+    key = key.replace(/^\/|\/$/g, "");
 
     if (key === path) {
       return Response.redirect(target, 301);
@@ -29,6 +27,7 @@ export async function onRequest(context) {
   }
 
   return new Response("❌ Link không tồn tại", { status: 404 });
+}
 
   const cache = caches.default;
   let response = await cache.match(GITHUB_RAW);
