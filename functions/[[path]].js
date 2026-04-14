@@ -186,11 +186,20 @@ load();
 }
 
 function html(content) {
-  return new Response(content, {
-    headers: { "content-type": "text/html" }
+  return new Response(`
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Link Manager</title>
+  </head>
+  <body>
+  ${content}
+  </body>
+  </html>
+  `, {
+    headers: { "content-type": "text/html; charset=UTF-8" }
   });
 }
-
 function json(data) {
   return new Response(JSON.stringify(data), {
     headers: { "content-type": "application/json" }
