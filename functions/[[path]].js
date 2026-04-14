@@ -1,45 +1,27 @@
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, next } = context;
 
   const url = new URL(request.url);
   let path = url.pathname.replace(/^\/|\/$/g, "");
 
-  // 👉 trang root
+  // 👉 BỎ QUA FILE STATIC
+  if (
+    url.pathname.startsWith("/links.txt") ||
+    url.pathname.startsWith("/favicon") ||
+    url.pathname.startsWith("/assets") ||
+    url.pathname.includes(".")
+  ) {
+    return next(); // 👈 QUAN TRỌNG
+  }
+
   if (!path) {
-    return new Response("🚀 Link system running", {
-      headers: { "content-type": "text/plain;charset=UTF-8" }
-    });
+    return new Response("🚀 Link system running");
   }
 
-  // 🔥 CACHE
-  const cache = caches.default;
-  const cacheKey = new Request("https://cache/links");
+  // 🔥 load file local
+  const res = await fetch(new URL("/links.txt", request.url));
+  const text = await res.text();
 
-  let response = await cache.match(cacheKey);
-
-  let text;
-
-  if (!response) {
-    // 👉 fetch file local
-    const res = await fetch(new URL("/links.txt", request.url));
-
-    text = await res.text();
-
-    // 👉 lưu vào cache
-    response = new Response(text, {
-      headers: {
-        "Cache-Control": "public, max-age=300"
-      }
-    });
-
-    context.waitUntil(cache.put(cacheKey, response.clone()));
-
-  } else {
-    // 👉 lấy từ cache
-    text = await response.text();
-  }
-
-  // 🔍 parse
   const lines = text.split("\n");
 
   for (let line of lines) {
@@ -49,7 +31,6 @@ export async function onRequest(context) {
     let [key, ...rest] = line.split(/\s+/);
     let target = rest.join(" ");
 
-    // bỏ dấu /
     key = key.replace(/^\/|\/$/g, "");
 
     if (key === path) {
@@ -57,8 +38,5 @@ export async function onRequest(context) {
     }
   }
 
-  return new Response("❌ Link không tồn tại", {
-    status: 404,
-    headers: { "content-type": "text/plain;charset=UTF-8" }
-  });
+  return new Response("❌ Link không tồn tại", { status: 404 });
 }
