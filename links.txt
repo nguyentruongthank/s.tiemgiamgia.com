@@ -1,3 +1,4 @@
+net http://tiemgiamgia.netlify.app
 /jimdo https://tiemgiamgia.jimdofree.com/
 /neo/ https://tiemgiamgia.neocities.org/
 /github https://tiemgiamgia.github.io/
