@@ -62,8 +62,9 @@ td,th{padding:10px;border:1px solid #ddd}
 <div class="card top">
 <input id="key" placeholder="key">
 <input id="url" placeholder="url">
-<input type="file" id="file">
+
 <button onclick="add()">➕ Add</button>
+<input type="file" id="file">
 <button onclick="importCSV()">📥 Import CSV</button>
 <button onclick="exportCSV()">📥 Export CSV</button>
 <button onclick="logout()">🚪 Logout</button>
